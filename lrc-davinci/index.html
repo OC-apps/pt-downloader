@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PT LRC → DaVinci</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap");
+  :root{
+    --bg:#090909; --panel:#111; --panel2:#171717; --line:#2b2b2b;
+    --text:#f5f5f5; --muted:#8e8e8e; --red:#e61e3a; --red2:#7d0d1c;
+    --ok:#1bc47d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+    radial-gradient(circle at 50% 0%,rgba(167,0,33,.17),transparent 34%),
+    linear-gradient(#090909,#050505);
+    color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh}
+  .app{max-width:1500px;margin:auto;padding:18px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:44px;height:44px;border:1px solid #3b3b3b;display:grid;place-items:center;
+    font-weight:900;font-style:italic;background:linear-gradient(145deg,#191919,#080808);
+    box-shadow:0 8px 28px #000}
+  h1{font-size:19px;margin:0;letter-spacing:.6px}
+  .sub{font-size:11px;color:#777;letter-spacing:1.7px;margin-top:3px;text-transform:uppercase}
+  .badge{font-size:10px;color:#bbb;border:1px solid #333;padding:8px 10px}
+  .grid{display:grid;grid-template-columns:480px 1fr;gap:14px}
+  .card{background:rgba(16,16,16,.94);border:1px solid #292929;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+  .card h2{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;margin:0;padding:13px 14px;border-bottom:1px solid #262626;color:#a8a8a8}
+  .pad{padding:14px}
+  textarea{width:100%;height:430px;resize:vertical;background:#080808;color:#eee;border:1px solid #303030;
+    padding:14px;font:13px/1.55 Consolas,monospace;outline:none}
+  textarea:focus,input:focus,select:focus{border-color:#6f1a28}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  label{display:block;color:#8f8f8f;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+  input,select{width:100%;background:#0a0a0a;color:white;border:1px solid #303030;padding:10px 11px;outline:none}
+  .toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .toggle{display:flex;align-items:center;gap:7px;background:#0b0b0b;border:1px solid #292929;padding:9px 10px;
+    color:#aaa;font-size:11px;cursor:pointer;user-select:none}
+  .toggle input{width:auto;margin:0;accent-color:var(--red)}
+  .actions{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-top:12px}
+  button{border:1px solid #333;background:#151515;color:#eee;padding:12px 11px;font-weight:800;
+    font-size:11px;letter-spacing:.35px;cursor:pointer}
+  button:hover{background:#1c1c1c}
+  button.primary{background:var(--red);border-color:var(--red);color:#fff}
+  button.primary:hover{background:#ff2946}
+  .previewWrap{padding:14px}
+  .screen{position:relative;aspect-ratio:16/9;background:
+    radial-gradient(circle at 50% 88%,rgba(225,0,49,.55),transparent 28%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 95px),
+    linear-gradient(90deg,#16070a,#21060b 50%,#150609);
+    border:1px solid #242424;overflow:hidden;display:grid;place-items:center}
+  .screen:after{content:"";position:absolute;inset:0;background:radial-gradient(circle,transparent 35%,rgba(0,0,0,.55) 100%);pointer-events:none}
+  .watermarkTop{position:absolute;top:18px;left:50%;transform:translateX(-50%);z-index:2;font-size:7px;letter-spacing:4px;color:#d8d8d8;font-weight:800}
+  .pt{position:absolute;right:18px;bottom:14px;z-index:2;color:#777;font-weight:900;font-style:italic;font-size:11px}
+  .lyrics{position:relative;z-index:2;width:92%;text-align:center;text-transform:uppercase;text-shadow:0 5px 10px rgba(0,0,0,.9)}
+  .prev,.next{font-family:Poppins,'Arial Black',sans-serif;font-weight:800;color:#6f6f6f;font-size:clamp(14px,2.2vw,34px);line-height:1.1;margin:12px 0}
+  .current{font-family:Poppins,'Arial Black',sans-serif;font-weight:800;color:white;font-size:clamp(22px,3.8vw,62px);line-height:1.03;margin:10px 0;letter-spacing:-1.5px}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .play{width:46px;height:40px;background:var(--red);border-color:var(--red);font-size:17px}
+  .time{font:11px Consolas,monospace;color:#aaa;min-width:80px}
+  input[type=range]{padding:0;border:0;accent-color:var(--red);flex:1}
+  .stats{display:flex;justify-content:space-between;gap:10px;margin-top:10px;color:#777;font-size:10px;letter-spacing:.4px}
+  .timeline{margin-top:14px;border:1px solid #292929;background:#0c0c0c}
+  .timelineHead{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #222}
+  .timelineHead b{font-size:11px;letter-spacing:.8px}
+  .status{font-size:10px;color:#777}
+  .list{max-height:335px;overflow:auto}
+  .cue{display:grid;grid-template-columns:92px 92px 1fr;gap:8px;padding:9px 10px;border-bottom:1px solid #1d1d1d;font-size:11px;align-items:center}
+  .cue:hover{background:#131313}
+  .cue.active{background:linear-gradient(90deg,rgba(230,30,58,.18),transparent);border-left:3px solid var(--red);padding-left:7px}
+  .tc{font:10px Consolas,monospace;color:#777}
+  .cueText{font-weight:700;color:#ddd}
+  .help{margin-top:12px;padding:11px 12px;border:1px solid #292929;background:#0c0c0c;color:#929292;font-size:11px;line-height:1.55}
+  .help strong{color:#ddd}
+  .footer{text-align:center;color:#535353;font-size:10px;margin-top:12px}
+  .toast{position:fixed;right:18px;bottom:18px;background:#171717;border:1px solid #393939;padding:12px 14px;font-size:11px;
+    box-shadow:0 20px 50px #000;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}.screen{max-height:none}.actions{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">PT</div>
+      <div>
+        <h1>LRC → DAVINCI SUBTITLE MAKER</h1>
+        <div class="sub">Prestige Tracks · herramienta independiente</div>
+      </div>
+    </div>
+    <div class="badge">SIN INSTALAR · FUNCIONA EN EL NAVEGADOR</div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1 · Pega tu letra sincronizada</h2>
+      <div class="pad">
+        <textarea id="input" spellcheck="false" placeholder="[00:14.63] Qué triste fue decirnos adiós
+[00:21.33] Cuando nos adorábamos más
+[00:28.57] Hasta la golondrina emigró
+..."></textarea>
+
+        <div class="row">
+          <div>
+            <label>Nombre del archivo</label>
+            <input id="filename" value="karaoke_letra" />
+          </div>
+          <div>
+            <label>Offset global (ms)</label>
+            <input id="offset" type="number" value="0" step="10" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Margen antes de la siguiente línea (ms)</label>
+            <input id="gap" type="number" value="80" min="0" max="1000" step="10" />
+          </div>
+          <div>
+            <label>Duración final si no hay siguiente marca</label>
+            <select id="lastDuration">
+              <option value="2500">2.5 segundos</option>
+              <option value="3500" selected>3.5 segundos</option>
+              <option value="5000">5 segundos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="toggles">
+          <label class="toggle"><input id="uppercase" type="checkbox" checked> Exportar en MAYÚSCULAS</label>
+          <label class="toggle"><input id="trimPunc" type="checkbox"> Quitar espacios dobles</label>
+          <label class="toggle"><input id="threeLines" type="checkbox"> Exportar 3 líneas</label>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="generate">GENERAR / ACTUALIZAR</button>
+          <button id="download">GUARDAR COMO…</button>
+          <button id="quickDownload">DESCARGA RÁPIDA</button>
+          <button id="copy">COPIAR SRT</button>
+        </div>
+
+        <div class="help">
+          <strong>Guardar el SRT:</strong> usa <b>GUARDAR COMO…</b> para elegir la carpeta y el nombre del archivo
+          (funciona mejor en Chrome o Edge). <b>DESCARGA RÁPIDA</b> usa la carpeta de descargas del navegador.
+          <br><br><strong>Para DaVinci:</strong> arrastra el archivo <b>.SRT</b> al Media Pool o usa
+          <b>Import Subtitle</b>, y después arrástralo a la línea de tiempo.
+          En el Track Style usa <b>Poppins ExtraBold</b>, color blanco, centrado, sombra negra y tamaño grande.
+          <br><br>
+          Los renglones vacíos con timestamp sí sirven: marcan exactamente dónde debe desaparecer la línea anterior.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="card">
+        <h2>2 · Vista previa 16:9</h2>
+        <div class="previewWrap">
+          <div class="screen">
+            <div class="watermarkTop">PRESTIGE TRACKS KARAOKE</div>
+            <div class="lyrics">
+              <div class="prev" id="prev">LÍNEA ANTERIOR</div>
+              <div class="current" id="current">TU LETRA APARECERÁ AQUÍ</div>
+              <div class="next" id="next">SIGUIENTE LÍNEA</div>
+            </div>
+            <div class="pt">PT</div>
+          </div>
+
+          <div class="controls">
+            <button class="play" id="play">▶</button>
+            <span class="time" id="time">00:00.00</span>
+            <input id="scrub" type="range" min="0" max="1000" value="0">
+          </div>
+          <div class="stats">
+            <span id="count">0 líneas</span>
+            <span id="duration">Duración: 00:00.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div class="timelineHead">
+          <b>SUBTÍTULOS GENERADOS</b>
+          <span class="status" id="status">Pega una letra y presiona Generar</span>
+        </div>
+        <div class="list" id="list"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">PT LRC → DaVinci · todo se procesa localmente en tu computadora</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let markers = [];
+let cues = [];
+let srtText = "";
+let playing = false;
+let timer = null;
+let playStart = 0;
+let baseMs = 0;
+
+const $ = id => document.getElementById(id);
+
+function parseTime(s){
+  const m = s.match(/^(\d+):(\d{1,2})(?:[.:](\d{1,3}))?$/);
+  if(!m) return null;
+  const min = +m[1], sec = +m[2];
+  let frac = m[3] || "0";
+  let ms;
+  if(frac.length===1) ms = +frac*100;
+  else if(frac.length===2) ms = +frac*10;
+  else ms = +frac.slice(0,3);
+  return (min*60+sec)*1000+ms;
+}
+function cleanText(t){
+  t = t.trim();
+  if($("trimPunc").checked) t = t.replace(/\s{2,}/g," ");
+  if($("uppercase").checked) t = t.toLocaleUpperCase("es-MX");
+  return t;
+}
+function parse(){
+  const raw = $("input").value.replace(/\r/g,"");
+  const offset = parseInt($("offset").value||0,10);
+  markers = [];
+  raw.split("\n").forEach((line, idx)=>{
+    const re = /\[(\d+:\d{1,2}(?:[.:]\d{1,3})?)\]/g;
+    let matches = [...line.matchAll(re)];
+    if(!matches.length) return;
+    const text = line.replace(re,"").trim();
+    matches.forEach(mt=>{
+      const time = parseTime(mt[1]);
+      if(time!==null) markers.push({time:Math.max(0,time+offset), text, sourceLine:idx+1});
+    });
+  });
+  markers.sort((a,b)=>a.time-b.time);
+
+  const gap = Math.max(0,parseInt($("gap").value||80,10));
+  const lastDur = parseInt($("lastDuration").value||3500,10);
+  cues = [];
+
+  for(let i=0;i<markers.length;i++){
+    const m = markers[i];
+    if(!m.text) continue;
+    let end;
+    if(i < markers.length-1) end = markers[i+1].time - gap;
+    else end = m.time + lastDur;
+    if(end <= m.time+120) end = m.time+120;
+
+    let text = cleanText(m.text);
+    if($("threeLines").checked){
+      const prev = previousTextMarker(i);
+      const next = nextTextMarker(i);
+      const arr = [];
+      if(prev) arr.push(cleanText(prev.text));
+      arr.push(text);
+      if(next) arr.push(cleanText(next.text));
+      text = arr.join("\n");
+    }
+    cues.push({start:m.time,end,text, markerIndex:i});
+  }
+  buildSRT();
+  renderList();
+  updatePreview(0);
+  const total = markers.length ? markers[markers.length-1].time + 1000 : 0;
+  $("scrub").max = Math.max(1000,total);
+  $("scrub").value = 0;
+  $("count").textContent = `${cues.length} líneas exportables · ${markers.length} marcas`;
+  $("duration").textContent = "Duración: "+fmtClock(total);
+  $("status").textContent = cues.length ? "Listo para descargar" : "No encontré líneas con timestamp";
+  toast(cues.length ? "SRT generado correctamente" : "No se encontraron marcas LRC válidas");
+}
+function previousTextMarker(i){
+  for(let j=i-1;j>=0;j--) if(markers[j].text) return markers[j];
+  return null;
+}
+function nextTextMarker(i){
+  for(let j=i+1;j<markers.length;j++) if(markers[j].text) return markers[j];
+  return null;
+}
+function fmtSRT(ms){
+  ms=Math.max(0,Math.round(ms));
+  const h=Math.floor(ms/3600000); ms%=3600000;
+  const m=Math.floor(ms/60000); ms%=60000;
+  const s=Math.floor(ms/1000); const z=ms%1000;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")},${String(z).padStart(3,"0")}`;
+}
+function fmtClock(ms){
+  ms=Math.max(0,Math.round(ms));
+  const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000), cs=Math.floor((ms%1000)/10);
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+}
+function buildSRT(){
+  srtText = cues.map((c,i)=>`${i+1}\n${fmtSRT(c.start)} --> ${fmtSRT(c.end)}\n${c.text}\n`).join("\n");
+}
+function renderList(){
+  const box=$("list"); box.innerHTML="";
+  cues.forEach((c,i)=>{
+    const d=document.createElement("div");
+    d.className="cue"; d.dataset.i=i;
+    d.innerHTML=`<span class="tc">${fmtClock(c.start)}</span><span class="tc">${fmtClock(c.end)}</span><span class="cueText"></span>`;
+    d.querySelector(".cueText").textContent=c.text.replace(/\n/g," / ");
+    d.onclick=()=>{ $("scrub").value=c.start; baseMs=c.start; updatePreview(c.start); };
+    box.appendChild(d);
+  });
+}
+function activeMarkerIndexAt(ms){
+  let idx=-1;
+  for(let i=0;i<markers.length;i++){
+    if(markers[i].time<=ms) idx=i; else break;
+  }
+  return idx;
+}
+function updatePreview(ms){
+  $("time").textContent=fmtClock(ms);
+  const idx=activeMarkerIndexAt(ms);
+  const curr = idx>=0 ? markers[idx] : null;
+  let p=null,n=null;
+  if(idx>=0){
+    p=previousTextMarker(idx);
+    n=nextTextMarker(idx);
+  }else{
+    n=markers.find(x=>x.text)||null;
+  }
+  $("prev").textContent=p?cleanText(p.text):"";
+  $("current").textContent=curr&&curr.text?cleanText(curr.text):"";
+  $("next").textContent=n?cleanText(n.text):"";
+  [...document.querySelectorAll(".cue")].forEach(el=>el.classList.remove("active"));
+  const ci=cues.findIndex(c=>ms>=c.start && ms<=c.end);
+  if(ci>=0){
+    const el=document.querySelector(`.cue[data-i="${ci}"]`);
+    if(el){el.classList.add("active"); el.scrollIntoView({block:"nearest"});}
+  }
+}
+$("generate").onclick=parse;
+function safeFilename(){
+  let name=$("filename").value.trim()||"karaoke_letra";
+  return name.replace(/[\\/:*?"<>|]+/g,"_");
+}
+function quickDownload(){
+  if(!srtText) parse();
+  if(!srtText) return;
+  const blob=new Blob(["\ufeff"+srtText],{type:"application/x-subrip;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=safeFilename()+".srt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast("Descarga iniciada");
+}
+$("download").onclick=async()=>{
+  if(!srtText) parse();
+  if(!srtText) return;
+  const data="\ufeff"+srtText;
+  if("showSaveFilePicker" in window){
+    try{
+      const handle=await window.showSaveFilePicker({
+        suggestedName:safeFilename()+".srt",
+        types:[{
+          description:"Archivo de subtítulos SRT",
+          accept:{"application/x-subrip":[".srt"]}
+        }]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(new Blob([data],{type:"application/x-subrip;charset=utf-8"}));
+      await writable.close();
+      toast("SRT guardado en la ruta elegida");
+      return;
+    }catch(err){
+      if(err && err.name==="AbortError") return;
+      console.error(err);
+      toast("No se pudo abrir Guardar como; usando descarga rápida");
+      quickDownload();
+      return;
+    }
+  }
+  alert("Tu navegador no permite elegir la carpeta directamente desde esta página. Usa Chrome o Edge actualizado. Se hará una descarga normal.");
+  quickDownload();
+};
+$("quickDownload").onclick=quickDownload;
+$("copy").onclick=async()=>{
+  if(!srtText) parse();
+  if(!srtText) return;
+  await navigator.clipboard.writeText(srtText);
+  toast("SRT copiado al portapapeles");
+};
+$("scrub").oninput=e=>{
+  baseMs=+e.target.value;
+  if(playing) playStart=performance.now();
+  updatePreview(baseMs);
+};
+$("play").onclick=()=>{
+  if(!markers.length) parse();
+  if(!markers.length) return;
+  playing=!playing;
+  $("play").textContent=playing?"❚❚":"▶";
+  if(playing){
+    playStart=performance.now();
+    tick();
+  }else cancelAnimationFrame(timer);
+};
+function tick(){
+  if(!playing) return;
+  const ms=baseMs+(performance.now()-playStart);
+  if(ms>+$("scrub").max){
+    playing=false;$("play").textContent="▶";baseMs=0;$("scrub").value=0;updatePreview(0);return;
+  }
+  $("scrub").value=ms; updatePreview(ms);
+  timer=requestAnimationFrame(tick);
+}
+function toast(msg){
+  const t=$("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),1700);
+}
+["uppercase","trimPunc","threeLines","gap","offset","lastDuration"].forEach(id=>{
+  $(id).addEventListener("change",()=>{ if($("input").value.trim()) parse(); });
+});
+
+$("input").value=`[00:14.63] Qué triste fue decirnos adiós
+[00:21.33] Cuando nos adorábamos más
+[00:28.57] Hasta la golondrina emigró
+[00:34.66] Presagiando el final
+[00:41.74] Qué triste luce todo sin ti
+[00:48.47] Los mares de las playas se van
+[00:53.21] Se tiñen los colores de gris
+[01:01.76] Hoy todo es soledad
+[01:07.58] No sé si vuelva a verte después
+[01:13.46] No sé qué de mi vida será
+[01:20.35] Sin el lucero azul de tu ser
+[01:26.64] Que no me alumbra ya
+[01:33.35] Hoy quiero saborear mi dolor
+[01:39.90] No pido compasión ni piedad
+[01:46.68] La historia de este amor se escribió
+[01:52.74] Para la eternidad
+[01:59.99] Qué triste, todos dicen que soy
+[02:06.04] Que siempre estoy hablando de ti
+[02:12.98] No saben que pensando en tu amor
+[02:18.22] En tu amor
+[02:21.47] He podido ayudarme a vivir
+[02:27.06] He podido ayudarme a vivir
+[02:35.57] Ah-ah, ah-ah
+[02:41.63] Ah-ah, ah-ah
+[02:48.38]
+[02:58.65] Hoy quiero saborear mi dolor
+[03:05.04] No pido compasión ni piedad
+[03:14.02] La historia de este amor se escribió
+[03:19.34] Para la eternidad
+[03:24.91] Qué triste, todos dicen que soy
+[03:32.60] Que siempre estoy hablando de ti
+[03:37.41] No saben que pensando en tu amor
+[03:42.73] En tu amor
+[03:47.53] He podido ayudarme a vivir
+[03:53.69] He podido ayudarme a vivir
+[03:58.78] He podido ayudarme a vivir
+[04:10.37]`;
+parse();
+</script>
+</body>
+</html>
