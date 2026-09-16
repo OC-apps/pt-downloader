@@ -94,6 +94,20 @@
     <div class="badge">SIN INSTALAR · FUNCIONA EN EL NAVEGADOR</div>
   </div>
 
+  <section class="card" style="margin-bottom:14px">
+    <h2>Buscar letra en LRCLIB</h2>
+    <div class="pad">
+      <form id="lyricsSearch">
+        <div class="row" style="margin-top:0">
+          <div><label for="searchTrack">Canción</label><input id="searchTrack" type="search" maxlength="200" placeholder="Nombre de la canción" required></div>
+          <div><label for="searchArtist">Artista (opcional)</label><input id="searchArtist" type="search" maxlength="200" placeholder="Nombre del artista"></div>
+        </div>
+        <button class="primary" id="searchButton" style="margin-top:10px">BUSCAR EN LRCLIB</button>
+      </form>
+      <p id="searchStatus" role="status" aria-live="polite" style="font-size:12px;color:#bbb">Busca una canción y carga su letra sincronizada en el editor.</p>
+      <div id="searchResults" style="max-height:320px;overflow:auto"></div>
+    </div>
+  </section>
   <div class="grid">
     <section class="card">
       <h2>1 · Pega tu letra sincronizada</h2>
@@ -190,7 +204,7 @@
     </section>
   </div>
 
-  <div class="footer">PT LRC → DaVinci · todo se procesa localmente en tu computadora</div>
+  <div class="footer">PT LRC → DaVinci · conversión local · las búsquedas se envían a LRCLIB</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -223,6 +237,7 @@ function cleanText(t){
   return t;
 }
 function parse(){
+  playing=false; cancelAnimationFrame(timer); baseMs=0; $("play").textContent="▶";
   const raw = $("input").value.replace(/\r/g,"");
   const offset = parseInt($("offset").value||0,10);
   markers = [];
@@ -265,7 +280,7 @@ function parse(){
   buildSRT();
   renderList();
   updatePreview(0);
-  const total = markers.length ? markers[markers.length-1].time + 1000 : 0;
+  const total = Math.max(0, ...markers.map(m=>m.time), ...cues.map(c=>c.end));
   $("scrub").max = Math.max(1000,total);
   $("scrub").value = 0;
   $("count").textContent = `${cues.length} líneas exportables · ${markers.length} marcas`;
@@ -341,7 +356,7 @@ function safeFilename(){
   return name.replace(/[\\/:*?"<>|]+/g,"_");
 }
 function quickDownload(){
-  if(!srtText) parse();
+  parse();
   if(!srtText) return;
   const blob=new Blob(["\ufeff"+srtText],{type:"application/x-subrip;charset=utf-8"});
   const url=URL.createObjectURL(blob);
@@ -355,7 +370,7 @@ function quickDownload(){
   toast("Descarga iniciada");
 }
 $("download").onclick=async()=>{
-  if(!srtText) parse();
+  parse();
   if(!srtText) return;
   const data="\ufeff"+srtText;
   if("showSaveFilePicker" in window){
@@ -385,7 +400,7 @@ $("download").onclick=async()=>{
 };
 $("quickDownload").onclick=quickDownload;
 $("copy").onclick=async()=>{
-  if(!srtText) parse();
+  parse();
   if(!srtText) return;
   await navigator.clipboard.writeText(srtText);
   toast("SRT copiado al portapapeles");
@@ -461,5 +476,6 @@ $("input").value=`[00:14.63] Qué triste fue decirnos adiós
 [04:10.37]`;
 parse();
 </script>
+<script src="lrclib.js"></script>
 </body>
 </html>
